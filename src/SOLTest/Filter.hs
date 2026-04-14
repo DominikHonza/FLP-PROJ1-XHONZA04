@@ -31,10 +31,6 @@ import SOLTest.Types
 --
 -- The union of @selected@ and @filteredOut@ always equals the input list.
 --
--- FLP: Implement this function using @matchesAny@ and @matchesCriterion@.
--- Note for me: Filter all to include and to exclude then sub the exclude from include
--- Workflow: load specs from FilterSpec arg, then check if to include all tests or check for criterium to keep
--- then check for criterium to leftout, also save the ones leftout, then sub
 filterTests ::
   FilterSpec ->
   [TestCaseDefinition] ->
