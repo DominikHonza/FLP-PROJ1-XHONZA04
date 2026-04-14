@@ -94,13 +94,34 @@ splitHeaderBody content =
 -- a malformed value (e.g. a non-integer weight). Lines with unrecognised
 -- prefixes are silently ignored, as the spec does not prohibit extra lines.
 --
--- FLP: Implement the rules for all accepted headers.
+-- No comment needed this is just guards and load of args of headers
+-- If anything goes wrong just return Left with error message else right with parsed value
 parseHeaderLine :: ParsedHeader -> String -> Either String ParsedHeader
 parseHeaderLine hdr line
   | "*** " `isPrefixOf` line =
       let val = trim (drop 4 line)
        in Right hdr {phDescription = Just val}
-  -- ???
+  | "+++ " `isPrefixOf` line =
+      let val = trim (drop 4 line)
+       in Right hdr {phCategory = Just val}
+  | "--- " `isPrefixOf` line =
+      let val = trim (drop 4 line)
+       in Right hdr {phTags = phTags hdr ++ [val]}
+  | ">>> " `isPrefixOf` line =
+      let val = trim (drop 4 line)
+       in case reads val of
+            [(n, "")] -> Right hdr {phWeight = Just n}
+            _ -> Left ("invalid >>> value: " ++ val)
+  | "!C! " `isPrefixOf` line =
+      let val = trim (drop 4 line)
+       in case reads val of
+            [(n, "")] -> Right hdr {phParserCodes = phParserCodes hdr ++ [n]}
+            _ -> Left ("invalid !C! value: " ++ val)
+  | "!I! " `isPrefixOf` line =
+      let val = trim (drop 4 line)
+       in case reads val of
+            [(n, "")] -> Right hdr {phInterpreterCodes = phInterpreterCodes hdr ++ [n]}
+            _ -> Left ("invalid !I! value: " ++ val)
   | otherwise = Right hdr -- unknown or comment line: skip
 
 -- | Parse all header lines into a 'ParsedHeader'.
@@ -192,10 +213,17 @@ parseTestFile tcf content = do
 -- is 'Nothing' (the parser must exit 0, which is implicit and not stored in the
 -- list); if @!C! 0@ was explicit, it is stored as @Just [0]@.
 --
--- FLP: Implement this function.
--- TODO IMPLEMENT FUNCTION
 buildExitCodes :: TestCaseType -> ParsedHeader -> (Maybe [Int], Maybe [Int])
-buildExitCodes testType header = (Just (phParserCodes header), Just (phInterpreterCodes header))
+buildExitCodes testType header = 
+  case testType of
+    ParseOnly -> (Just (phParserCodes header), Nothing) -- For parse we do not expect nothing for execute codes
+    ExecuteOnly -> (Nothing, Just (phInterpreterCodes header)) -- For execute we do not expect nothing for parse codes
+    Combined ->
+      ( if null (phParserCodes header) -- If no codes were present in header then Nothing
+          then Nothing
+          else Just (phParserCodes header),
+        Just (phInterpreterCodes header) -- No if cause codes are mandatory
+      )
 
 -- ---------------------------------------------------------------------------
 -- Utilities
