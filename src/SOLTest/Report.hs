@@ -56,14 +56,44 @@ buildReport discovered unexecuted mResults selected foundCount =
 --
 -- The @definitions@ list is used to look up each test's category and points.
 --
--- FLP: Implement this function. The following functions may (or may not) come in handy:
---      @Map.fromList@, @Map.foldlWithKey'@, @Map.empty@, @Map.lookup@, @Map.insertWith@,
---      @Map.map@, @Map.fromList@
 groupByCategory ::
   [TestCaseDefinition] ->
   Map String TestCaseReport ->
   Map String CategoryReport
-groupByCategory definitions results = undefined
+groupByCategory definitions results =
+  let defsByName = makeDefsByName definitions -- Create map of tests by name
+   in Map.foldlWithKey' addOneResult Map.empty results -- Iterate over them and sum up points and result for each category respectfully
+  where
+    makeDefsByName defs =
+      Map.fromList [(tcdName d, d) | d <- defs] -- Create map of tests by name
+
+    -- Processes one test result
+    addOneResult acc testName report =
+      case Map.lookup testName defsByName of -- Finds test name in map created previously
+        Nothing -> acc -- Definition is missing /VUT SKIP :]
+        Just def -> -- Definition exists, get old context and update
+          let category = tcdCategory def
+              points = tcdPoints def
+              oldCategoryReport = getCategoryReport acc category -- Old context
+              newCategoryReport = updateCategoryReport oldCategoryReport testName report points -- New context updated
+           in Map.insert category newCategoryReport acc -- Put back the to acc
+
+    -- Gets the existing report if exists else creates default one
+    getCategoryReport acc category =
+      Map.findWithDefault
+        (CategoryReport 0 0 Map.empty)
+        category
+        acc
+
+    -- Gets the old context adds the points and sets result
+    updateCategoryReport old testName report points =
+      CategoryReport
+        { crTotalPoints = crTotalPoints old + points,
+          crPassedPoints =
+            crPassedPoints old
+              + if tcrResult report == Passed then points else 0, -- If not passed do not add
+          crTestResults = Map.insert testName report (crTestResults old)
+        }
 
 -- ---------------------------------------------------------------------------
 -- Statistics
@@ -71,7 +101,6 @@ groupByCategory definitions results = undefined
 
 -- | Compute the 'TestStats' from available information.
 --
--- FLP: Implement this function. You'll use @computeHistogram@ here.
 computeStats ::
   -- | Total @.test@ files found on disk.
   Int ->
@@ -82,7 +111,30 @@ computeStats ::
   -- | Category reports (Nothing in dry-run mode).
   Maybe (Map String CategoryReport) ->
   TestStats
-computeStats foundCount loadedCount selectedCount mCategoryResults = undefined
+computeStats foundCount loadedCount selectedCount mCategoryResults =
+  let histogram = maybe (computeHistogram Map.empty) computeHistogram mCategoryResults -- Using compute histogram as stated in header
+      -- Gather passedTests
+      -- CSHARP variant: passedTests = categoryResults.Values .Sum(cat => cat.TestResults.Count(r => r.Result == Passed));
+      -- AI Assisted, i was unable to comme up with this inner passedTests function
+      passedTests =
+        maybe
+          0
+          ( sum
+              . map
+                ( Map.size
+                    . Map.filter (\r -> tcrResult r == Passed)
+                    . crTestResults
+                )
+              . Map.elems
+          )
+          mCategoryResults
+   in TestStats -- Build TestStats
+        { tsFoundTestFiles = foundCount,
+          tsLoadedTests = loadedCount,
+          tsSelectedTests = selectedCount,
+          tsPassedTests = passedTests,
+          tsHistogram = histogram
+        }
 
 -- ---------------------------------------------------------------------------
 -- Histogram
@@ -98,9 +150,37 @@ computeStats foundCount loadedCount selectedCount mCategoryResults = undefined
 -- of categories in each bin is accumulated. All ten bins are always present in
 -- the result, even if their count is 0.
 --
--- FLP: Implement this function.
+-- Note for me: In csharp it should like this
+-- var histogram = new Dictionary<string, int>();
+--
+--for (int i = 0; i < 10; i++)
+--{
+--    string key = "0." + i;
+--    histogram[key] = 0;
+--}
+-- foreach (var kvp in categories)
+-- {
+--     var categoryReport = kvp.Value;
+--     double rate = (double)categoryReport.PassedPoints / categoryReport.TotalPoints;
+--     string bin = RateToBin(rate);
+--     histogram[bin] += 1;
+-- }
+
 computeHistogram :: Map String CategoryReport -> Map String Int
-computeHistogram categories = undefined
+computeHistogram categories =
+  let emptyBins = Map.fromList [(k, 0) | k <- bins] -- Fill bins with 0
+      -- Adds one category to histogram
+      update hist categoryReport =
+        let totalTests = Map.size (crTestResults categoryReport) -- Get all tests count
+            passedTests = Map.size (Map.filter ((== Passed) . tcrResult) (crTestResults categoryReport)) -- Filterout only passed ones
+            bin = rateToBin $
+              if totalTests == 0 -- Safety for 0 division
+                then 0.0
+                else fromIntegral passedTests / fromIntegral totalTests -- Count success rate and save to bin
+         in Map.insertWith (+) bin 1 hist -- Increment bin counter and save value of bin
+   in foldl update emptyBins (Map.elems categories) -- Iter over all categories
+  where
+    bins = ["0.0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9"] -- All types of bins
 
 -- | Map a pass rate in @[0, 1]@ to a histogram bin key.
 --
