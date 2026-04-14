@@ -76,9 +76,13 @@ emptyHeader =
 -- If there is no empty line, all lines are treated as header lines and the
 -- body is empty.
 --
--- FLP: Implement this function.
+-- Note for me: Basically split content by empty row and split to lines header rest put back as content of test
 splitHeaderBody :: String -> ([String], String)
-splitHeaderBody content = undefined
+splitHeaderBody content =
+  let (header, body) = break (all isSpace) (lines content) -- all isSpace will find the empty row and chops with break the list of lines
+  in case body of -- Handle if the test is empty, if not rejoin the lines of body
+        [] -> (header, "")
+        (_ : bodyLines) -> (header, unlines bodyLines)
 
 -- ---------------------------------------------------------------------------
 -- Header line parsing
@@ -189,8 +193,9 @@ parseTestFile tcf content = do
 -- list); if @!C! 0@ was explicit, it is stored as @Just [0]@.
 --
 -- FLP: Implement this function.
+-- TODO IMPLEMENT FUNCTION
 buildExitCodes :: TestCaseType -> ParsedHeader -> (Maybe [Int], Maybe [Int])
-buildExitCodes = undefined
+buildExitCodes testType header = (Just (phParserCodes header), Just (phInterpreterCodes header))
 
 -- ---------------------------------------------------------------------------
 -- Utilities

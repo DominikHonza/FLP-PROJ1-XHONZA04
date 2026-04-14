@@ -178,6 +178,6 @@ buildFilterSpec includeSome excludeSome includeCategory includeTag excludeCatego
           fsExcludes = excludesSome ++ excludesCategory ++ excludesTag, -- Build excludes from arrays of FilterCriterion
           fsUseRegex = False -- Optional for now letting it rest :]
         }
-  where -- Removes trailing spaces
+  where -- Removes trailing spaces, AI helped there to clarify the trim function to use Library rather than reverse
     trim s = dropWhileEnd isSpace (dropWhile isSpace s)
 
