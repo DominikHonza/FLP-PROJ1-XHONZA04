@@ -121,7 +121,7 @@ executeCombined parserPath interpPath test = do
           }
     else 
       withTempSource pOut $ \tmpPath -> do
-        (iExit, iOut, iErr) <- runInterpreter interpPath tmpPath (tcdStdinFile test) -- Run interpeter
+        (iExit, iOut, iError) <- runInterpreter interpPath tmpPath (tcdStdinFile test) -- Run interpeter
         let iCode = exitCodeToInt iExit
             expectedCodes = fromMaybe [] (tcdExpectedInterpreterExitCodes test)
         (result, diffOut) <- checkInterpreterResult iCode expectedCodes iOut (tcdExpectedStdoutFile test) -- Ru ndiff

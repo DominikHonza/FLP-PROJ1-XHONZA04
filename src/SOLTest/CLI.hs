@@ -11,6 +11,7 @@ where
 import Options.Applicative
 import SOLTest.Types
 import Data.List (dropWhileEnd)
+import Data.Char (isSpace)
 
 -- | Parse command-line arguments into an 'Options' record.
 -- Exits with a help message on @--help@ or on invalid arguments.

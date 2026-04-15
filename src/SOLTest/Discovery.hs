@@ -7,6 +7,9 @@ import System.Directory
     listDirectory,
   )
 import System.FilePath (replaceExtension, takeBaseName, (</>))
+import Control.Monad (forM)
+import System.Directory (doesDirectoryExist)
+import System.FilePath (takeExtension)
 
 -- | Discover all @.test@ files in a directory.
 --

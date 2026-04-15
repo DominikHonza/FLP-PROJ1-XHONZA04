@@ -61,9 +61,10 @@ groupByCategory ::
   Map String TestCaseReport ->
   Map String CategoryReport
 groupByCategory definitions results =
-  let defsByName = makeDefsByName definitions -- Create map of tests by name
-   in Map.foldlWithKey' addOneResult Map.empty results -- Iterate over them and sum up points and result for each category respectfully
+  Map.foldlWithKey' addOneResult Map.empty results -- Iterate over them and sum up points and result for each category respectfully
   where
+    defsByName = makeDefsByName definitions -- Create map of tests by name
+
     makeDefsByName defs =
       Map.fromList [(tcdName d, d) | d <- defs] -- Create map of tests by name
 
