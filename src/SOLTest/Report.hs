@@ -55,7 +55,6 @@ buildReport discovered unexecuted mResults selected foundCount =
 -- one per category.
 --
 -- The @definitions@ list is used to look up each test's category and points.
---
 groupByCategory ::
   [TestCaseDefinition] ->
   Map String TestCaseReport ->
@@ -64,7 +63,6 @@ groupByCategory definitions results =
   Map.foldlWithKey' addOneResult Map.empty results -- Iterate over them and sum up points and result for each category respectfully
   where
     defsByName = makeDefsByName definitions -- Create map of tests by name
-
     makeDefsByName defs =
       Map.fromList [(tcdName d, d) | d <- defs] -- Create map of tests by name
 
@@ -72,7 +70,8 @@ groupByCategory definitions results =
     addOneResult acc testName report =
       case Map.lookup testName defsByName of -- Finds test name in map created previously
         Nothing -> acc -- Definition is missing /VUT SKIP :]
-        Just def -> -- Definition exists, get old context and update
+        Just def ->
+          -- Definition exists, get old context and update
           let category = tcdCategory def
               points = tcdPoints def
               oldCategoryReport = getCategoryReport acc category -- Old context
@@ -101,7 +100,6 @@ groupByCategory definitions results =
 -- ---------------------------------------------------------------------------
 
 -- | Compute the 'TestStats' from available information.
---
 computeStats ::
   -- | Total @.test@ files found on disk.
   Int ->
@@ -114,9 +112,9 @@ computeStats ::
   TestStats
 computeStats foundCount loadedCount selectedCount mCategoryResults =
   let histogram = maybe (computeHistogram Map.empty) computeHistogram mCategoryResults -- Using compute histogram as stated in header
-      -- Gather passedTests
-      -- CSHARP variant: passedTests = categoryResults.Values .Sum(cat => cat.TestResults.Count(r => r.Result == Passed));
-      -- AI Assisted, i was unable to comme up with this inner passedTests function
+  -- Gather passedTests
+  -- CSHARP variant: passedTests = categoryResults.Values .Sum(cat => cat.TestResults.Count(r => r.Result == Passed));
+  -- AI Assisted, i was unable to comme up with this inner passedTests function
       passedTests =
         maybe
           0
@@ -154,11 +152,11 @@ computeStats foundCount loadedCount selectedCount mCategoryResults =
 -- Note for me: In csharp it should like this
 -- var histogram = new Dictionary<string, int>();
 --
---for (int i = 0; i < 10; i++)
---{
+-- for (int i = 0; i < 10; i++)
+-- {
 --    string key = "0." + i;
 --    histogram[key] = 0;
---}
+-- }
 -- foreach (var kvp in categories)
 -- {
 --     var categoryReport = kvp.Value;
@@ -166,18 +164,18 @@ computeStats foundCount loadedCount selectedCount mCategoryResults =
 --     string bin = RateToBin(rate);
 --     histogram[bin] += 1;
 -- }
-
 computeHistogram :: Map String CategoryReport -> Map String Int
 computeHistogram categories =
   let emptyBins = Map.fromList [(k, 0) | k <- bins] -- Fill bins with 0
-      -- Adds one category to histogram
+  -- Adds one category to histogram
       update hist categoryReport =
         let totalTests = Map.size (crTestResults categoryReport) -- Get all tests count
             passedTests = Map.size (Map.filter ((== Passed) . tcrResult) (crTestResults categoryReport)) -- Filterout only passed ones
-            bin = rateToBin $
-              if totalTests == 0 -- Safety for 0 division
-                then 0.0
-                else fromIntegral passedTests / fromIntegral totalTests -- Count success rate and save to bin
+            bin =
+              rateToBin $
+                if totalTests == 0 -- Safety for 0 division
+                  then 0.0
+                  else fromIntegral passedTests / fromIntegral totalTests -- Count success rate and save to bin
          in Map.insertWith (+) bin 1 hist -- Increment bin counter and save value of bin
    in foldl update emptyBins (Map.elems categories) -- Iter over all categories
   where

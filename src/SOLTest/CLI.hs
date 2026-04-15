@@ -8,10 +8,10 @@ module SOLTest.CLI
   )
 where
 
+import Data.Char (isSpace)
+import Data.List (dropWhileEnd)
 import Options.Applicative
 import SOLTest.Types
-import Data.List (dropWhileEnd)
-import Data.Char (isSpace)
 
 -- | Parse command-line arguments into an 'Options' record.
 -- Exits with a help message on @--help@ or on invalid arguments.
@@ -155,7 +155,7 @@ filterSpecParser =
 -- --------------------------------------------------------
 -- The type is quite obvious since we have to read six strings lists of presorted value sets
 -- Note for me: One string array for each option from filterSpecParser connected with <*>
--- it already presort boxes with values of same options ex: -i ex1 -i ex2 -i BASIC this 
+-- it already presort boxes with values of same options ex: -i ex1 -i ex2 -i BASIC this
 -- will so this yields something like ["ex1", "ex2", "basic"] [] [] [] [] []
 -- We need to define each item, for better orientation:
 -- --------------------------------------------------------
@@ -165,20 +165,19 @@ filterSpecParser =
 -- includeTag       = --it
 -- excludeCategory  = --ec
 -- excludeTag       = --et
-
 buildFilterSpec :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> FilterSpec
 buildFilterSpec includeSome excludeSome includeCategory includeTag excludeCategory excludeTag =
-  let includesSome      = map (\s -> ByAny (trim s)) includeSome
-      includesCategory  = map (\s -> ByCategory (trim s)) includeCategory
-      includesTag       = map (\s -> ByTag (trim s)) includeTag
-      excludesSome      = map (\s -> ByAny (trim s)) excludeSome
-      excludesCategory  = map (\s -> ByCategory (trim s)) excludeCategory
-      excludesTag       = map (\s -> ByTag (trim s)) excludeTag
+  let includesSome = map (\s -> ByAny (trim s)) includeSome
+      includesCategory = map (\s -> ByCategory (trim s)) includeCategory
+      includesTag = map (\s -> ByTag (trim s)) includeTag
+      excludesSome = map (\s -> ByAny (trim s)) excludeSome
+      excludesCategory = map (\s -> ByCategory (trim s)) excludeCategory
+      excludesTag = map (\s -> ByTag (trim s)) excludeTag
    in FilterSpec
         { fsIncludes = includesSome ++ includesCategory ++ includesTag, -- Build includes from arrays of FilterCriterion
           fsExcludes = excludesSome ++ excludesCategory ++ excludesTag, -- Build excludes from arrays of FilterCriterion
           fsUseRegex = False -- Optional for now letting it rest :]
         }
-  where -- Removes trailing spaces, AI helped there to clarify the trim function to use Library rather than reverse
+  where
+    -- Removes trailing spaces, AI helped there to clarify the trim function to use Library rather than reverse
     trim s = dropWhileEnd isSpace (dropWhile isSpace s)
-

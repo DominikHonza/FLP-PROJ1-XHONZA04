@@ -80,7 +80,7 @@ emptyHeader =
 splitHeaderBody :: String -> ([String], String)
 splitHeaderBody content =
   let (header, body) = break (all isSpace) (lines content) -- all isSpace will find the empty row and chops with break the list of lines
-  in case body of -- Handle if the test is empty, if not rejoin the lines of body
+   in case body of -- Handle if the test is empty, if not rejoin the lines of body
         [] -> (header, "")
         (_ : bodyLines) -> (header, unlines bodyLines)
 
@@ -99,29 +99,29 @@ splitHeaderBody content =
 parseHeaderLine :: ParsedHeader -> String -> Either String ParsedHeader
 parseHeaderLine hdr line
   | "*** " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in Right hdr {phDescription = Just val}
+    let val = trim (drop 4 line)
+     in Right hdr {phDescription = Just val}
   | "+++ " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in Right hdr {phCategory = Just val}
+    let val = trim (drop 4 line)
+     in Right hdr {phCategory = Just val}
   | "--- " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in Right hdr {phTags = phTags hdr ++ [val]}
+    let val = trim (drop 4 line)
+     in Right hdr {phTags = phTags hdr ++ [val]}
   | ">>> " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in case reads val of
-            [(n, "")] -> Right hdr {phWeight = Just n}
-            _ -> Left ("invalid >>> value: " ++ val)
+    let val = trim (drop 4 line)
+     in case reads val of
+          [(n, "")] -> Right hdr {phWeight = Just n}
+          _ -> Left ("invalid >>> value: " ++ val)
   | "!C! " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in case reads val of
-            [(n, "")] -> Right hdr {phParserCodes = phParserCodes hdr ++ [n]}
-            _ -> Left ("invalid !C! value: " ++ val)
+    let val = trim (drop 4 line)
+     in case reads val of
+          [(n, "")] -> Right hdr {phParserCodes = phParserCodes hdr ++ [n]}
+          _ -> Left ("invalid !C! value: " ++ val)
   | "!I! " `isPrefixOf` line =
-      let val = trim (drop 4 line)
-       in case reads val of
-            [(n, "")] -> Right hdr {phInterpreterCodes = phInterpreterCodes hdr ++ [n]}
-            _ -> Left ("invalid !I! value: " ++ val)
+    let val = trim (drop 4 line)
+     in case reads val of
+          [(n, "")] -> Right hdr {phInterpreterCodes = phInterpreterCodes hdr ++ [n]}
+          _ -> Left ("invalid !I! value: " ++ val)
   | otherwise = Right hdr -- unknown or comment line: skip
 
 -- | Parse all header lines into a 'ParsedHeader'.
@@ -159,10 +159,10 @@ determineTestType hdr =
       Right ExecuteOnly
     (cs, _ : _)
       | null cs || cs == [0] ->
-          -- Interpreter codes present, parser codes absent or exactly [0] → COMBINED
-          Right Combined
+        -- Interpreter codes present, parser codes absent or exactly [0] → COMBINED
+        Right Combined
       | otherwise ->
-          Left $ CannotDetermineType "invalid combination of !C! and !I! codes"
+        Left $ CannotDetermineType "invalid combination of !C! and !I! codes"
     ([], []) ->
       Left $ CannotDetermineType "no !C! or !I! codes specified"
 
@@ -212,9 +212,8 @@ parseTestFile tcf content = do
 -- For 'Combined' tests: if no @!C!@ codes were given, 'tcdExpectedParserExitCodes'
 -- is 'Nothing' (the parser must exit 0, which is implicit and not stored in the
 -- list); if @!C! 0@ was explicit, it is stored as @Just [0]@.
---
 buildExitCodes :: TestCaseType -> ParsedHeader -> (Maybe [Int], Maybe [Int])
-buildExitCodes testType header = 
+buildExitCodes testType header =
   case testType of
     ParseOnly -> (Just (phParserCodes header), Nothing) -- For parse we do not expect nothing for execute codes
     ExecuteOnly -> (Nothing, Just (phInterpreterCodes header)) -- For execute we do not expect nothing for parse codes

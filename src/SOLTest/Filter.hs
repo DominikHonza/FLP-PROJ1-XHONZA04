@@ -30,13 +30,12 @@ import SOLTest.Types
 -- * @filteredOut@ are the tests that were removed by filtering.
 --
 -- The union of @selected@ and @filteredOut@ always equals the input list.
---
 filterTests ::
   FilterSpec ->
   [TestCaseDefinition] ->
   ([TestCaseDefinition], [TestCaseDefinition])
 filterTests spec tests =
-  let useRegexSpec  = fsUseRegex spec -- Load specs for regex
+  let useRegexSpec = fsUseRegex spec -- Load specs for regex
       includesSpecs = fsIncludes spec -- Load specs for include
       excludesSpecs = fsExcludes spec -- Load specs for exclude
       included =
@@ -63,11 +62,11 @@ matchesAny useRegex criteria test =
 matchesCriterion :: Bool -> TestCaseDefinition -> FilterCriterion -> Bool
 matchesCriterion _ test criterion =
   case criterion of
-    ByAny raw -> 
+    ByAny raw ->
       let valTrimmed = trimFilterId raw
-        in tcdName test == valTrimmed
-        || tcdCategory test == valTrimmed
-        || valTrimmed `elem` tcdTags test
+       in tcdName test == valTrimmed
+            || tcdCategory test == valTrimmed
+            || valTrimmed `elem` tcdTags test
     ByCategory raw -> tcdCategory test == trimFilterId raw -- Just compare category of test with criterium
     ByTag raw -> trimFilterId raw `elem` tcdTags test
 

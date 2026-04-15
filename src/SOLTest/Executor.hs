@@ -18,12 +18,11 @@ where
 import Control.Exception (IOException, try)
 import Data.Maybe (fromMaybe)
 import SOLTest.Types
-import System.Directory (doesFileExist)
+import System.Directory (Permissions, doesFileExist, executable, getPermissions)
 import System.Exit (ExitCode (..))
 import System.IO (hClose, hPutStr)
 import System.IO.Temp (withSystemTempFile)
 import System.Process (proc, readCreateProcessWithExitCode)
-import System.Directory (Permissions, executable, getPermissions)
 
 -- ---------------------------------------------------------------------------
 -- Public API
@@ -118,24 +117,22 @@ executeCombined parserPath interpPath test = do
             tcrInterpreterStderr = Nothing,
             tcrDiffOutput = Nothing
           }
-    else 
-      withTempSource pOut $ \tmpPath -> do
-        (iExit, iOut, iError) <- runInterpreter interpPath tmpPath (tcdStdinFile test) -- Run interpeter
-        let iCode = exitCodeToInt iExit
-            expectedCodes = fromMaybe [] (tcdExpectedInterpreterExitCodes test)
-        (result, diffOut) <- checkInterpreterResult iCode expectedCodes iOut (tcdExpectedStdoutFile test) -- Ru ndiff
-        return
-          TestCaseReport -- Build Test case report for execution
-            { tcrResult = result,
-              tcrParserExitCode = Just pCode,
-              tcrInterpreterExitCode = Just iCode,
-              tcrParserStdout = Just pOut,
-              tcrParserStderr = Just pError,
-              tcrInterpreterStdout = Just iOut,
-              tcrInterpreterStderr = Just iError,
-              tcrDiffOutput = diffOut
-            }
-  
+    else withTempSource pOut $ \tmpPath -> do
+      (iExit, iOut, iError) <- runInterpreter interpPath tmpPath (tcdStdinFile test) -- Run interpeter
+      let iCode = exitCodeToInt iExit
+          expectedCodes = fromMaybe [] (tcdExpectedInterpreterExitCodes test)
+      (result, diffOut) <- checkInterpreterResult iCode expectedCodes iOut (tcdExpectedStdoutFile test) -- Ru ndiff
+      return
+        TestCaseReport -- Build Test case report for execution
+          { tcrResult = result,
+            tcrParserExitCode = Just pCode,
+            tcrInterpreterExitCode = Just iCode,
+            tcrParserStdout = Just pOut,
+            tcrParserStderr = Just pError,
+            tcrInterpreterStdout = Just iOut,
+            tcrInterpreterStderr = Just iError,
+            tcrDiffOutput = diffOut
+          }
 
 -- ---------------------------------------------------------------------------
 -- Process wrappers
@@ -192,9 +189,9 @@ checkInterpreterResult ::
 checkInterpreterResult actualCode expectedCodes iOut mOutFile
   | actualCode `notElem` expectedCodes = return (IntFail, Nothing) -- Return code does not match expected test fail
   | actualCode == 0 =
-      case mOutFile of
-        Nothing -> return (Passed, Nothing) -- mOutFile is empty no need t run dif
-        Just outFile -> runDiffOnOutput iOut outFile -- Run dif
+    case mOutFile of
+      Nothing -> return (Passed, Nothing) -- mOutFile is empty no need t run dif
+      Just outFile -> runDiffOnOutput iOut outFile -- Run dif
   | otherwise = return (Passed, Nothing) -- Return code is not 0 but is in expected codes, do not check for .out
 
 -- | Write a string to a temporary file and pass its path to an action.
@@ -208,10 +205,10 @@ withTempSource content action =
 
 -- | Write the interpreter stdout to a temp file and diff it against @.out@.
 -- The file is deleted when the action returns.
---
 runDiffOnOutput :: String -> FilePath -> IO (TestResult, Maybe String)
 runDiffOnOutput iOut outFile =
-  withSystemTempFile "sol-actual.out" $ \tmpPath tmpHandle -> do -- Copy paste from withTempSource
+  withSystemTempFile "sol-actual.out" $ \tmpPath tmpHandle -> do
+    -- Copy paste from withTempSource
     hPutStr tmpHandle iOut
     hClose tmpHandle
     (exitCode, out) <- runDiff tmpPath outFile
@@ -243,19 +240,18 @@ withExecutable (Just path) action = do
 -- | Check that a file exists and has its executable bit set.
 -- The IO action returns 'Nothing' if the file is usable, or 'Just'
 -- an 'UnexecutedReason' describing the problem.
---
 checkExecutable :: FilePath -> IO (Maybe UnexecutedReason)
 checkExecutable path = do
   result <- try (doesFileExist path) :: IO (Either IOException Bool)
   case result of
     Left err -> return (Just (UnexecutedReason CannotExecute (Just (show err))))
-    -- File with executable does not exist, return Just with reason  
-    Right False -> 
+    -- File with executable does not exist, return Just with reason
+    Right False ->
       return
         ( Just
             UnexecutedReason
-              { urCode = CannotExecute
-                ,urMessage = Just ("Executable not found: " ++ path)
+              { urCode = CannotExecute,
+                urMessage = Just ("Executable not found: " ++ path)
               }
         )
     -- File exists, try to get permission, if exec then Nothing else return error reason in Just
@@ -267,11 +263,12 @@ checkExecutable path = do
           if executable perms
             then return Nothing -- Is executable
             else -- Is not executable
+
               return
                 ( Just
                     UnexecutedReason
-                      { urCode = CannotExecute
-                        ,urMessage = Just ("File is not executable: " ++ path)
+                      { urCode = CannotExecute,
+                        urMessage = Just ("File is not executable: " ++ path)
                       }
                 )
 

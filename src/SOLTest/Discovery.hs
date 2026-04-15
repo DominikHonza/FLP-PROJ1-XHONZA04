@@ -1,15 +1,10 @@
 -- | Discovering @.test@ files and their companion @.in@\/@.out@ files.
 module SOLTest.Discovery (discoverTests) where
 
-import SOLTest.Types
-import System.Directory
-  ( doesFileExist,
-    listDirectory,
-  )
-import System.FilePath (replaceExtension, takeBaseName, (</>))
 import Control.Monad (forM)
-import System.Directory (doesDirectoryExist)
-import System.FilePath (takeExtension)
+import SOLTest.Types
+import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
+import System.FilePath (replaceExtension, takeBaseName, takeExtension, (</>))
 
 -- | Discover all @.test@ files in a directory.
 --
@@ -25,14 +20,16 @@ discoverTests :: Bool -> FilePath -> IO [TestCaseFile]
 discoverTests recursive dir = do
   entries <- listDirectory dir
   let fullPaths = map (dir </>) entries
-  nested <- forM fullPaths $ \path -> do -- Foreach path run nested search
+  nested <- forM fullPaths $ \path -> do
+    -- Foreach path run nested search
     isDir <- doesDirectoryExist path -- Check if its dir
     if isDir
       then
         if recursive
           then discoverTests True path -- Check subdirs
           else return []
-      else do -- Check if its file with correct extension
+      else do
+        -- Check if its file with correct extension
         isFile <- doesFileExist path -- This is maybe overkill i guess
         if isFile && takeExtension path == ".test"
           then do
