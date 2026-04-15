@@ -29,6 +29,8 @@ Okrajově jsem AI využil na refaktorizaci, ale ta většinou zavedla syntax, kt
 
 Jedinou části funkce generovanou AI je vnitřní funkce passedTests ve funkci computeStats ve Report.hs. Zde je také umístěný disclaimer o využití AI.
 
+Kontrola archivu pro odevzdání.
+
 **Konkrétní příklady využití:**
 - vysvětlení chybových hlášek z překladače GHC
 - návrh typových signatur funkcí
