@@ -1,84 +1,47 @@
-# Šablona projektu pro funkcionální část FLP 2025/26
+# Projekt pro funkcionální část FLP 2025/26
 
-Do této šablony budete doplňovat svá řešení implementace několika funkcí, ze kterých tak poskládáte funkční nástroj pro integrační testování projektů z předmětu IPP. Všechny důležité pokyny najdete v zadání, implementační detaily jsou vysvětleny v komentářích v kódu. V případě nejasností kontaktujte cvičicího.
+## Výsledný stav
+Ve výsledném projektu jsem se téměř neodchýlil od šablony a změnami byly pouze přidání pár importů standardních knihoven. Mezi nimi:
 
-Tento soubor v odevzdaném projektu nahraďte svým `README.md` napsaným dle zadání (pokud žádný nepíšete, vůbec jej do odevzdaného archivu nedávejte).
+- `Data.Char` – pro využití isSpace
+- `Data.List` – pro využití dropWhileEnd
+- `Control.Monad` – pro využití forM
+- `Control.Exception` – pro využití try
+- `Data.Maybe` – pro využití fromMaybe
 
-## Struktura projektu
+A další standardní knihovny bez kterých vz nebylo možné využít doporučené funkce. Přidání bylo konzultováno s AI viz AI.md.
 
-Je jistým zvykem, že se haskellové programy rozdělují (alespoň) na dvě části:
-- samotný spustitelný program, ve kterém žije především hlavní struktura programu a funkce `main`, která vrací `IO` akci, která bude po spuštění provedena;
-- knihovnu, ve které žije většina samotné logiky programu.
+Žadné rozšíření nebylo implementováno a dle pokynů v zadání funkcí byly příslušné proměnné a přepínače jako `useRegex` ignorovány.
 
-Má to dva hlavní důvody (neberte je však úplně dogmaticky):
-- Rozlišení mezi *pure* světem, který funguje předvídatelně – funkce má pro stejný vstup vždy stejný výstup, a světem s *vedlejšími efekty* – `IO` akce po vyhodnocení vždycky mohou dopadnout jinak. Typicky chceme psát funkcionální programy tak, že většinu jejich komplexní logiky vyjadřujeme pomocí *pure* funkcí, které jsou definovány v knihovně. Ve spustitelné části pak máme jen (relativně) jednoduchý `IO` kód, který obstarává potřebnou interakci s vnějším světem, k čemuž využívá právě ty složité *pure* funkce z knihovny.
-- Testovatelnost – kód k testování unit testy nebo property testy žije v knihovně, zatímco aplikační kód už vyžaduje spíše integrační testování.  
+V projektu jsem používal dokumentační styl Haddock pro komentování funkcí a datových typů přímo ve zdrojovém kódu dle zadání. 
+Primárně vždy šlo o:
+- Zakomentování letmého popisu funkce
+- Sekvenční popsání logiky pomocí Behavior
+- Popis návratových hodnot a formát návratového objektu
+- Interní poznámky
+- Příklad v jiném porgramovacím jazyce
+- Disclaimer k využití AI
 
-**Struktura repozitáře:**
-- `app/` obsahuje kód spustitelné aplikace – je v něm pouze jediný modul `Main.hs`.
-  - **Zde začněte**, abyste se seznámili s celkovým postupem programu. Nemělo by ale být nutné zde cokoliv měnit.
+## Ne/Problémy při řešení
+Téměř na žádné větší problémy jsem při implementaci nenarazil. Postupoval jsem logicky po souborech a bylo docela jednoduché a přirozené je vyplnit. 
 
-- `src/SOLTest/` obsahuje řadu modulů knihovní části:
-  - `CLI.hs`: Definuje parser pro parametry příkazové řádky pomocí knihovny [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
-    - Zde **doplňte** funkci `buildFilterSpec`.
+Velmi atypicky jsem byl schopný projekt zpravoznit, vypracovat a zkompletovat v jendom průchodu implementace a následné refektorizaci (primárně komentářů).
 
-  - `Discovery.hs`: Definuje funkci pro (potenciálně rekurzivní) prohledání cílového adresáře s testy, která vrací základní „deskriptory” nalezených `.test` souborů.
-    - Zde **doplňte** funkci `discoverTests`.
+Jediný problém byla vniřtní funkce passedTest, kterou jsem nebyl schopný vymyslet viz AI.md.
 
-  - `Executor.hs`: Definuje funkce (`IO` akce) pro spouštění parseru, interpretu a nástroje *diff*.
-    - Zde **doplňte** funkce `executeCombined`, `checkInterpreterResult`, `runDiffOnOutput`, `checkExecutable`.
 
-  - `Filter.hs`: Definuje funkci pro filtrování testů na základě dodaných pravidel (získaných z CLI argumentů).
-    - Zde **doplňte** funkce `filterTests` a `matchesCriterion`.
+## Zdroje
 
-  - `JSON.hs`: Definuje pro jednotlivé vlastní datové typy způsob, jakým se serializují do výstupního formátu JSON. Nemělo by být nutné zde cokoliv měnit.
+- THE GLASGOW HASKELL COMPILER TEAM. *GHC User's Guide*. [online]. Dostupné z: https://downloads.haskell.org/~ghc/latest/docs/users_guide.pdf
 
-  - `Parser.hs`: Definuje funkce pro načtení souboru s testem ve formátu SOLtest.
-    - Zde máte dvě možnosti.
-    - Možnost 1: Jen **doplňte** funkce `splitHeaderBody`, `parseHeaderLine`, `buildExitCodes`.
-    - Možnost 2 (za bonusový bod ✨): Přidejte do projektu knihovnu [megaparsec](https://hackage.haskell.org/package/megaparsec), která slouží pro vytváření „produkčních” parserů, a správným způsobem ji zde využijte (je to trochu kanón na vrabce, ale proč by ne). Dále upravte property testy v `ParserSpec`, aby tuto novou implementaci řádně testovaly.
+- HASKELL COMMUNITY. *Hackage: Haskell Package Documentation*. [online]. Dostupné z: https://hackage.haskell.org/
 
-  - `Report.hs`: Definuje funkce pro sestavení výsledného reportu o testování.
-    - Zde **doplňte** funkce `groupByCategory`, `computeStats`, `computeHistogram`.
+- HASKELL HADDOCK TEAM. *Haddock Documentation: Markup*. [online]. Dostupné z: https://haskell-haddock.readthedocs.io/latest/markup.html
 
-- `test/SOLTest/` obsahuje předchystané property-based testy pro čistě funkcionální (*pure*) části projektu. Zkuste se s nimi podrobně seznámit, abyste alespoň obecně pochopili, jak se QuickTest používá. Z definovaných vlastností je možné vyčíst také očekávané chování vašich funkcí.
+- Materiály k předmětu FLP, Fakulta informačních technologií.
 
-- `cabal.project` je soubor, který ovlivňuje nastavení *projektu* – lze v něm nastavit například verzi překladače.
-- `flp-fun.cabal` je soubor, který konfiguruje *balíčky* – základní „samostatně přeložitelné” programové jednotky (knihovna, spustitelný program, spustitelný program pro testy).
+- OpenAI. *ChatGPT – konzultace při řešení projektu*. [online]. Dostupné z: viz soubor `AI.md`
 
-- `dummy-parser.py` a `dummy-interpreter.py` jsou jednoduché pythonové skripty, které je možné použít pro testování vašeho nástroje jakožto implementace překladače a interpretu. Jejich chování je vysvětleno v záhlaví těchto souborů.
-- `example_sol_tests/` obsahuje několik ukázkových definic testů (pro použití s dummy překladačem/interpretem). Soubor `expected_output.json` pak ukazuje, jaký výstupní JSON by měl váš nástroj pro tyto testy vytvořit.
+## Feedback k projektu
 
-## Překlad, spouštění, testování
-
-Při vývoji je nejpohodlnější pro spuštění projektu používat příkaz `cabal run`:
-
-```sh
-cabal run flp-fun -- (argumenty předané spuštěnému programu)
-```
-
-Pokud chcete své řešení vyzkoušet např. na dodané sadě ukázek, můžete tedy spustit:
-
-```sh
-# skripty použité pro -p, -t vyžadují, aby v systému byl nainstalovaný Python 3
-cabal run flp-fun -- -p ./dummy-parser.py -t ./dummy-interpreter.py example_sol_tests
-
-# pro "pretty print" výstupního JSON lze použít utilitu `jq` (nutno nainstalovat do systému)
-cabal run flp-fun -- -p ./dummy-parser.py -t ./dummy-interpreter.py example_sol_tests | jq
-```
-
-Tento příkaz by měl automaticky zajistit překlad, pokud je nutný. Vynutit překlad je možné také pomocí příkazu `cabal build`. Vytvořená binárka bude k dispozici jako soubor `./dist-newstyle/build/[platforma]/ghc-[překladač]/flp-fun-[verze]/x/flp-fun/build/flp-fun/flp-fun`.
-
-Pokud by Cabal házel nějaké divné chyby, zkuste nejprve `cabal clean`, pak `cabal build` a až pak `cabal run`.
-
-Přiložené property-based testy spustíte pomocí `cabal test`.
-
-Při vývoji se také může hodit příkaz `cabal repl`, který spustí interaktivní prostředí GHCi, do kterého automaticky načte všechny moduly z knihovny (které se povede přeložit). Metapříkazem `:r` je pak možné změněné moduly přeložit a znovu načíst.
-
-## Jak začít
-
-Aby se projekt vůbec přeložil, je nutné nejprve v `CLI.hs` správně vytvořit funkci `buildFilterSpec` – v tomto případě máte za úkol i přijít na její typovou signaturu, proto v projektu vůbec není.
-
-Některé funkce, které máte implementovat, jsou v šabloně definovány pomocí `= undefined`. Takové funkce se sice přeloží, ale jejich použití povede na chybu při běhu. Dalším krokem by tedy mohlo být doplnit na tato místa nějakou „dummy implementaci“ – tak, ať funkce vrátí nějakou výchozí hodnotu. Tímto způsobem se postupně seznámíte s typy, které v projektu používáte. Po doplnění takových výchozích hodnot pak začne projekt po spuštění i něco vypisovat.
-
-Dále už stačí jít funkci po funkci a postupně jednu po druhé ladit s využitím `cabal repl`. Jakmile budete mít pocit, že by všechno mělo aspoň nějak fungovat, spusťte své řešení s „dummy“ parserem a interpretem a zkoušejte, jak reaguje na různé případy. Doporučuji použít AI nástroje k vygenerování testovacích souborů, které pokrývají různé možné situace.
+Zadání i kostra projektu mi přijdou hezky zpracované, ale přišlo mi, že by bylo vhodné studenta poslat si README před tím než dostane nálož specifikace chování tesů a spouštění parseru s interpretem. Z zadání mi bylo prvně nejasné zda bude součástí i nějaké implementace právě toho spouštění nebo vyhodnocení.

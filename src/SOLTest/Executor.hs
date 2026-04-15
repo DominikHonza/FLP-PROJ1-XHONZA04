@@ -7,6 +7,8 @@
 --   exit code, optionally diff stdout against @.out@.
 -- * 'Combined': run the parser first (must exit 0), write its output to a
 --   temp file, then run the interpreter as in 'ExecuteOnly'.
+-- 
+-- AI USED in checkInterpreterResult 
 module SOLTest.Executor
   ( executeTest,
     runParser,

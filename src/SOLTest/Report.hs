@@ -3,6 +3,7 @@
 -- This module assembles a 'TestReport' from the results of test execution,
 -- computes aggregate statistics, and builds the per-category success-rate
 -- histogram.
+-- AI USED in computeStats 
 module SOLTest.Report
   ( buildReport,
     groupByCategory,
