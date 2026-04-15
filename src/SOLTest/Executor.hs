@@ -105,7 +105,6 @@ executeCombined :: FilePath -> FilePath -> TestCaseDefinition -> IO TestCaseRepo
 executeCombined parserPath interpPath test = do
   (pExitCode, pOut, pError) <- runParser parserPath (tcdSourceCode test) -- Run parser
   let pCode = exitCodeToInt pExitCode
-      expectedCodes = fromMaybe [] (tcdExpectedParserExitCodes test)
   if pCode /= 0 -- If parser Code is not 0, not successfull parsing
     then
       return
