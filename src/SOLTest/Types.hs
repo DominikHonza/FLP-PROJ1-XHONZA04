@@ -2,10 +2,6 @@
 --
 -- This module defines all algebraic data types used throughout the tool.
 --
--- FLP: Note that the data types use a so-called “record syntax” that you maybe aren't
---      familiar with. This is merely a syntactic sugar for in-place creation of accessor
---      functions for the individual fields inside of the data value. For example, see
---      @TestCaseFile@ below. This way of defining it is exactly the same as if I wrote:
 --
 -- >    data TestCaseFile = TestCaseFile String FilePath (Maybe FilePath) (Maybe FilePath)
 --
@@ -249,7 +245,6 @@ data FilterSpec = FilterSpec
     fsExcludes :: [FilterCriterion],
     -- | When 'True', criterion values are treated as POSIX regular expressions.
     --
-    -- FLP: If you're not implementing the regex matching bonus extension, you can either
     -- remove this and update the usages of the datatype throughout the codebase, or you
     -- can simply fill it with an ignored default value.
     fsUseRegex :: Bool
