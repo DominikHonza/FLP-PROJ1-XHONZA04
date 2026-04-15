@@ -1,5 +1,8 @@
 # Projekt pro funkcionální část FLP 2025/26
 
+## Repositář
+https://github.com/DominikHonza/FLP-PROJ1-XHONZA04
+
 ## Výsledný stav
 Ve výsledném projektu jsem se téměř neodchýlil od šablony a změnami byly pouze přidání pár importů standardních knihoven. Mezi nimi:
 
