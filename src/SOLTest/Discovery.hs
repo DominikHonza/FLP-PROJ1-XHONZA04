@@ -16,7 +16,25 @@ import System.FilePath (replaceExtension, takeBaseName, takeExtension, (</>))
 -- more dirs and run nested search on them and gather their tests. This will give at end List of tests in this dir and
 -- multiple lists of tests for each subdir. At end concat so it returns just on huge list of test back to caller.
 -- This wf is for recursive, if not recursive skip part for searching in subdirs
-discoverTests :: Bool -> FilePath -> IO [TestCaseFile]
+--
+-- == Behavior
+--
+-- * For each path in the directory:
+--
+--     * If it is a directory:
+--         * If @recursive@ is enabled → search it recursively
+--         * Otherwise → skip it
+--
+--     * If it is a file:
+--         * Check if it has the @.test@ extension
+--         * If yes → call 'findCompanionFiles'
+--
+-- * Finally, all results are concatenated into a single list.
+--
+discoverTests
+  :: Bool      -- ^ Whether to search subdirectories recursively
+  -> FilePath  -- ^ Root directory to search
+  -> IO [TestCaseFile] -- ^ Discovered test cases
 discoverTests recursive dir = do
   entries <- listDirectory dir
   let fullPaths = map (dir </>) entries

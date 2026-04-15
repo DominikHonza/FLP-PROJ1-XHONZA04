@@ -57,18 +57,40 @@ matchesAny useRegex criteria test =
 -- When @useRegex@ is 'True', the criterion value is treated as a POSIX
 -- regular expression matched against the relevant field(s).
 --
--- TODO REGEX Ignoring for now hence _ test criterion
--- Note for me: By criterion type check for cond criteriums
-matchesCriterion :: Bool -> TestCaseDefinition -> FilterCriterion -> Bool
+-- == Behavior
+--
+-- * 'ByAny':
+--     * Matches if the value equals:
+--         * test name ('tcdName')
+--         * test category ('tcdCategory')
+--         * any tag in 'tcdTags'
+--
+-- * 'ByCategory':
+--     * Matches if the value equals the test category
+--
+-- * 'ByTag':
+--     * Matches if the value is present in test tags
+--
+-- * All values are trimmed using 'trimFilterId' before comparison
+--
+-- == Notes
+--
+-- * Currently, @useRegex@ is ignored (exact string matching only)
+-- * Matching is case-sensitive
+matchesCriterion
+  :: Bool                 -- ^ Enable regex matching (currently unused)
+  -> TestCaseDefinition   -- ^ Test to evaluate
+  -> FilterCriterion      -- ^ Criterion to match against
+  -> Bool
 matchesCriterion _ test criterion =
   case criterion of
     ByAny raw ->
       let valTrimmed = trimFilterId raw
        in tcdName test == valTrimmed
-            || tcdCategory test == valTrimmed
-            || valTrimmed `elem` tcdTags test
+            || tcdCategory test == valTrimmed -- Check if name corresponds to category
+            || valTrimmed `elem` tcdTags test -- Check if valTrimmed present in tcdTags
     ByCategory raw -> tcdCategory test == trimFilterId raw -- Just compare category of test with criterium
-    ByTag raw -> trimFilterId raw `elem` tcdTags test
+    ByTag raw -> trimFilterId raw `elem` tcdTags test -- Check if trimFilterId is in tcdTags
 
 -- | Trim leading and trailing whitespace from a filter identifier.
 trimFilterId :: String -> String

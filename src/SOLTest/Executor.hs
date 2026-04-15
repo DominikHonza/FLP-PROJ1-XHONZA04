@@ -99,8 +99,34 @@ executeExecuteOnly interpPath test =
 
 -- | Execute a 'Combined' test case.
 --
--- Note for me: It is merge of executeParseOnly and executeExecuteOnly, if executeParseOnly is successfull then try to execute
-executeCombined :: FilePath -> FilePath -> TestCaseDefinition -> IO TestCaseReport
+-- This mode first runs the parser and, if successful, passes its output
+-- to the interpreter.
+--
+-- == Behavior
+--
+-- * Run parser on the test source
+--     * If parsing fails (non-zero exit code):
+--         * Return 'ParseFail'
+--         * Interpreter is NOT executed
+--
+-- * If parsing succeeds:
+--     * Write parser output to a temporary file
+--     * Run interpreter on that file
+--     * Compare results using 'checkInterpreterResult'
+--
+-- == Result
+--
+-- A 'TestCaseReport' which contains:
+--
+-- * parser results (always)
+-- * interpreter results (only if parsing succeeded)
+-- * optional diff output if executable
+
+executeCombined
+  :: FilePath              -- ^ Parser executable path
+  -> FilePath              -- ^ Interpreter executable path
+  -> TestCaseDefinition    -- ^ Test definition
+  -> IO TestCaseReport
 executeCombined parserPath interpPath test = do
   (pExitCode, pOut, pError) <- runParser parserPath (tcdSourceCode test) -- Run parser
   let pCode = exitCodeToInt pExitCode
@@ -174,7 +200,22 @@ runDiff actualFile expectedFile = do
 --
 -- Runs diff only when the interpreter exited with code 0 AND a @.out@ file
 -- is present.
+-- Checks whether the interpreter exit code matches expected codes
+-- If matches then compares the output with the provided @.out@ file.
 --
+-- == Behavior
+--
+-- * If @actualCode@ is NOT in @expectedCodes@:
+--     * Return 'IntFail'
+--
+-- * If @actualCode == 0@:
+--     * If no @.out@ file is provided → return 'Passed'
+--     * If @.out@ file exists → run 'runDiffOnOutput'
+--
+-- * If @actualCode /= 0@ but is expected:
+--     * Return 'Passed' without diff check
+--
+-- AI DISCLAIMER:
 -- AI Used : Recommended to use guards instead of If then, transformed to guards
 checkInterpreterResult ::
   -- | Actual interpreter exit code.
@@ -204,14 +245,33 @@ withTempSource content action =
     action tmpPath
 
 -- | Write the interpreter stdout to a temp file and diff it against @.out@.
--- The file is deleted when the action returns.
-runDiffOnOutput :: String -> FilePath -> IO (TestResult, Maybe String)
+--
+-- The function writes the interpreter stdout to a tmp file and
+-- runs @diff@ against the provided expected output file.
+-- The tmp file is deleted when the action returns.
+--
+-- == Behavior
+--
+-- * Write @iOut@ to a temporary file
+-- * Run 'runDiff' between the temporary file and @outFile@
+-- * Evaluate the exit code of @diff@
+--
+-- == Result
+--
+-- * 'Passed' if outputs match (diff exit code = success)
+-- * 'DiffFail' if outputs differ
+--     * includes diff output in 'Just'
+--
+runDiffOnOutput
+  :: String   -- ^ Interpreter stdout
+  -> FilePath -- ^ Expected output file
+  -> IO (TestResult, Maybe String)
 runDiffOnOutput iOut outFile =
   withSystemTempFile "sol-actual.out" $ \tmpPath tmpHandle -> do
     -- Copy paste from withTempSource
     hPutStr tmpHandle iOut
     hClose tmpHandle
-    (exitCode, out) <- runDiff tmpPath outFile
+    (exitCode, out) <- runDiff tmpPath outFile -- Run diff
     case exitCode of
       ExitSuccess -> return (Passed, Nothing)
       ExitFailure _ -> return (DiffFail, Just out) -- On failure return DiffFail and out produced by diff
@@ -238,9 +298,21 @@ withExecutable (Just path) action = do
     Nothing -> action path
 
 -- | Check that a file exists and has its executable bit set.
--- The IO action returns 'Nothing' if the file is usable, or 'Just'
--- an 'UnexecutedReason' describing the problem.
-checkExecutable :: FilePath -> IO (Maybe UnexecutedReason)
+--
+-- Returns:
+--
+-- * 'Nothing' if the file exists and has the executable permission set
+-- * 'Just' 'UnexecutedReason' if the file cannot be executed
+--
+-- == Behavior
+--
+-- * If the file is ok executable returns Nothing
+-- * If the file does not exist → returns 'CannotExecute'
+-- * If an IO error occurs → returns 'CannotExecute' with the error message
+-- * If the file exists but is not executable → returns 'CannotExecute'
+checkExecutable
+  :: FilePath -- ^ Path to the executable file
+  -> IO (Maybe UnexecutedReason)
 checkExecutable path = do
   result <- try (doesFileExist path) :: IO (Either IOException Bool)
   case result of

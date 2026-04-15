@@ -159,13 +159,27 @@ filterSpecParser =
 -- will so this yields something like ["ex1", "ex2", "basic"] [] [] [] [] []
 -- We need to define each item, for better orientation:
 -- --------------------------------------------------------
--- includeSome      = -i/--include
--- excludeSome      = -e/--exclude
--- includeCategory  = --ic
--- includeTag       = --it
--- excludeCategory  = --ec
--- excludeTag       = --et
-buildFilterSpec :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> FilterSpec
+-- * include by any field (@-i\/--include@)
+-- * exclude by any field (@-e\/--exclude@)
+-- * include by category (@--ic@)
+-- * include by tag (@--it@)
+-- * exclude by category (@--ec@)
+-- * exclude by tag (@--et@)
+--
+-- == Behavior
+--
+-- * All identifiers are trimmed before conversion to 'FilterCriterion'.
+-- * Regex mode is disabled by default ('fsUseRegex' = 'False').
+-- * Includes and excludes are merged into final lists
+-- * Regex mode is disabled ('fsUseRegex' = 'False'), not doing extra part
+buildFilterSpec
+  :: [String] -- ^ Include by any field
+  -> [String] -- ^ Exclude by any field
+  -> [String] -- ^ Include by category
+  -> [String] -- ^ Include by tag
+  -> [String] -- ^ Exclude by category
+  -> [String] -- ^ Exclude by tag
+  -> FilterSpec
 buildFilterSpec includeSome excludeSome includeCategory includeTag excludeCategory excludeTag =
   let includesSome = map (\s -> ByAny (trim s)) includeSome
       includesCategory = map (\s -> ByCategory (trim s)) includeCategory

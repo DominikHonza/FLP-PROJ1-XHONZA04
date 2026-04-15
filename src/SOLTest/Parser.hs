@@ -90,13 +90,33 @@ splitHeaderBody content =
 
 -- | Parse a single header line, updating the accumulated 'ParsedHeader'.
 --
--- Returns 'Left' with an error message if the line has a known prefix but
--- a malformed value (e.g. a non-integer weight). Lines with unrecognised
--- prefixes are silently ignored, as the spec does not prohibit extra lines.
+-- == Supported prefixes
 --
--- No comment needed this is just guards and load of args of headers
+-- * @\"*** \"@ – description ('phDescription')
+-- * @\"+++ \"@ – category ('phCategory')
+-- * @\"--- \"@ – tag (appended to 'phTags')
+-- * @\">>> \"@ – weight (integer, 'phWeight')
+-- * @\"!C! \"@ – parser exit code (integer, appended to 'phParserCodes')
+-- * @\"!I! \"@ – interpreter exit code (integer, appended to 'phInterpreterCodes')
+--
+-- == Behavior
+--
+-- * Known prefixes update the corresponding field
+-- * Numeric fields are parsed using 'reads'
+--     * invalid values → 'Left' with error message
+-- * Unknown or unsupported lines are ignored
+--
+-- == Result
+--
+-- * 'Right' updated header on success
+-- * 'Left' error message on malformed numeric value
+--
+-- No comment really needed, this is just guards and load of args of headers (just to make Leo happy :koteseni:)
 -- If anything goes wrong just return Left with error message else right with parsed value
-parseHeaderLine :: ParsedHeader -> String -> Either String ParsedHeader
+parseHeaderLine
+  :: ParsedHeader   -- ^ Accumulated header state
+  -> String         -- ^ Input line
+  -> Either String ParsedHeader
 parseHeaderLine hdr line
   | "*** " `isPrefixOf` line =
     let val = trim (drop 4 line)
@@ -122,7 +142,7 @@ parseHeaderLine hdr line
      in case reads val of
           [(n, "")] -> Right hdr {phInterpreterCodes = phInterpreterCodes hdr ++ [n]}
           _ -> Left ("invalid !I! value: " ++ val)
-  | otherwise = Right hdr -- unknown or comment line: skip
+  | otherwise = Right hdr -- unknown or comment line: VUT skip
 
 -- | Parse all header lines into a 'ParsedHeader'.
 --
@@ -209,10 +229,36 @@ parseTestFile tcf content = do
 
 -- | Build the expected exit code lists from the parsed header and inferred type.
 --
--- For 'Combined' tests: if no @!C!@ codes were given, 'tcdExpectedParserExitCodes'
--- is 'Nothing' (the parser must exit 0, which is implicit and not stored in the
--- list); if @!C! 0@ was explicit, it is stored as @Just [0]@.
-buildExitCodes :: TestCaseType -> ParsedHeader -> (Maybe [Int], Maybe [Int])
+-- The resulting pair contains:
+--
+-- * expected parser exit codes
+-- * expected interpreter exit codes
+--
+-- == Behavior by test type
+--
+-- * 'ParseOnly':
+--     * parser exit codes are taken from 'phParserCodes'
+--     * interpreter exit codes are 'Nothing'
+--
+-- * 'ExecuteOnly':
+--     * parser exit codes are 'Nothing'
+--     * interpreter exit codes are taken from 'phInterpreterCodes'
+--
+-- * 'Combined':
+--     * interpreter exit codes are always taken from 'phInterpreterCodes'
+--     * parser exit codes are:
+--         * 'Nothing' if no @!C!@ values were provided
+--         * 'Just [...]' if one or more @!C!@ values were provided
+--
+-- == Notes
+--
+-- For 'Combined' tests, missing parser exit codes mean that parser success
+-- (exit code @0@) is assumed implicitly and is not stored explicitly.
+-- If @!C! 0@ is present in the header, it is preserved as @Just [0]@.
+buildExitCodes
+  :: TestCaseType                 -- ^ Inferred test type
+  -> ParsedHeader                 -- ^ Parsed header values
+  -> (Maybe [Int], Maybe [Int])   -- ^ Expected parser and interpreter exit codes
 buildExitCodes testType header =
   case testType of
     ParseOnly -> (Just (phParserCodes header), Nothing) -- For parse we do not expect nothing for execute codes
