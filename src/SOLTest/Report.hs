@@ -58,7 +58,7 @@ buildReport discovered unexecuted mResults selected foundCount =
 --
 -- The function aggregates a flat map of test results into per-category
 -- summaries, combining metadata from 'TestCaseDefinition' with exec results.
--- 
+--
 -- == Behavior
 --
 -- * Each test result is matched with its definition using the test name
@@ -75,11 +75,13 @@ buildReport discovered unexecuted mResults selected foundCount =
 -- * total points ('crTotalPoints')
 -- * passed points ('crPassedPoints')
 -- * test results ('crTestResults')
---
-groupByCategory
-  :: [TestCaseDefinition]           -- ^ Test definitions
-  -> Map String TestCaseReport      -- ^ Test results by test name
-  -> Map String CategoryReport      -- ^ Aggregated reports by category
+groupByCategory ::
+  -- | Test definitions
+  [TestCaseDefinition] ->
+  -- | Test results by test name
+  Map String TestCaseReport ->
+  -- | Aggregated reports by category
+  Map String CategoryReport
 groupByCategory definitions results =
   Map.foldlWithKey' addOneResult Map.empty results -- Iterate over them and sum up points and result for each category respectfully
   where
@@ -153,7 +155,7 @@ computeStats ::
 computeStats foundCount loadedCount selectedCount mCategoryResults =
   let histogram = maybe (computeHistogram Map.empty) computeHistogram mCategoryResults -- Using compute histogram as stated in header
   -- Gather passedTests
-  -- CSHARP variant: 
+  -- CSHARP variant:
   -- @
   --  passedTests = categoryResults.Values .Sum(cat => cat.TestResults.Count(r => r.Result == Passed));
   -- @
@@ -217,10 +219,11 @@ computeStats foundCount loadedCount selectedCount mCategoryResults =
 --
 -- * keys   – bin labels (@\"0.x\"@)
 -- * values – number of categories in each bin
---
-computeHistogram
-  :: Map String CategoryReport -- ^ Category reports indexed by name
-  -> Map String Int            -- ^ Histogram (bin → count)
+computeHistogram ::
+  -- | Category reports indexed by name
+  Map String CategoryReport ->
+  -- | Histogram (bin → count)
+  Map String Int
 computeHistogram categories =
   let emptyBins = Map.fromList [(k, 0) | k <- bins] -- Fill bins with 0
   -- Adds one category to histogram

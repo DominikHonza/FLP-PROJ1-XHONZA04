@@ -113,10 +113,12 @@ splitHeaderBody content =
 --
 -- No comment really needed, this is just guards and load of args of headers (just to make Leo happy :koteseni:)
 -- If anything goes wrong just return Left with error message else right with parsed value
-parseHeaderLine
-  :: ParsedHeader   -- ^ Accumulated header state
-  -> String         -- ^ Input line
-  -> Either String ParsedHeader
+parseHeaderLine ::
+  -- | Accumulated header state
+  ParsedHeader ->
+  -- | Input line
+  String ->
+  Either String ParsedHeader
 parseHeaderLine hdr line
   | "*** " `isPrefixOf` line =
     let val = trim (drop 4 line)
@@ -255,10 +257,13 @@ parseTestFile tcf content = do
 -- For 'Combined' tests, missing parser exit codes mean that parser success
 -- (exit code @0@) is assumed implicitly and is not stored explicitly.
 -- If @!C! 0@ is present in the header, it is preserved as @Just [0]@.
-buildExitCodes
-  :: TestCaseType                 -- ^ Inferred test type
-  -> ParsedHeader                 -- ^ Parsed header values
-  -> (Maybe [Int], Maybe [Int])   -- ^ Expected parser and interpreter exit codes
+buildExitCodes ::
+  -- | Inferred test type
+  TestCaseType ->
+  -- | Parsed header values
+  ParsedHeader ->
+  -- | Expected parser and interpreter exit codes
+  (Maybe [Int], Maybe [Int])
 buildExitCodes testType header =
   case testType of
     ParseOnly -> (Just (phParserCodes header), Nothing) -- For parse we do not expect nothing for execute codes

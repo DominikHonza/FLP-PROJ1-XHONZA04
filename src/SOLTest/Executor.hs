@@ -121,12 +121,14 @@ executeExecuteOnly interpPath test =
 -- * parser results (always)
 -- * interpreter results (only if parsing succeeded)
 -- * optional diff output if executable
-
-executeCombined
-  :: FilePath              -- ^ Parser executable path
-  -> FilePath              -- ^ Interpreter executable path
-  -> TestCaseDefinition    -- ^ Test definition
-  -> IO TestCaseReport
+executeCombined ::
+  -- | Parser executable path
+  FilePath ->
+  -- | Interpreter executable path
+  FilePath ->
+  -- | Test definition
+  TestCaseDefinition ->
+  IO TestCaseReport
 executeCombined parserPath interpPath test = do
   (pExitCode, pOut, pError) <- runParser parserPath (tcdSourceCode test) -- Run parser
   let pCode = exitCodeToInt pExitCode
@@ -261,11 +263,12 @@ withTempSource content action =
 -- * 'Passed' if outputs match (diff exit code = success)
 -- * 'DiffFail' if outputs differ
 --     * includes diff output in 'Just'
---
-runDiffOnOutput
-  :: String   -- ^ Interpreter stdout
-  -> FilePath -- ^ Expected output file
-  -> IO (TestResult, Maybe String)
+runDiffOnOutput ::
+  -- | Interpreter stdout
+  String ->
+  -- | Expected output file
+  FilePath ->
+  IO (TestResult, Maybe String)
 runDiffOnOutput iOut outFile =
   withSystemTempFile "sol-actual.out" $ \tmpPath tmpHandle -> do
     -- Copy paste from withTempSource
@@ -310,9 +313,10 @@ withExecutable (Just path) action = do
 -- * If the file does not exist → returns 'CannotExecute'
 -- * If an IO error occurs → returns 'CannotExecute' with the error message
 -- * If the file exists but is not executable → returns 'CannotExecute'
-checkExecutable
-  :: FilePath -- ^ Path to the executable file
-  -> IO (Maybe UnexecutedReason)
+checkExecutable ::
+  -- | Path to the executable file
+  FilePath ->
+  IO (Maybe UnexecutedReason)
 checkExecutable path = do
   result <- try (doesFileExist path) :: IO (Either IOException Bool)
   case result of

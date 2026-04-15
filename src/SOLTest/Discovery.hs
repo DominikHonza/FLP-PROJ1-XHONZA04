@@ -30,11 +30,13 @@ import System.FilePath (replaceExtension, takeBaseName, takeExtension, (</>))
 --         * If yes → call 'findCompanionFiles'
 --
 -- * Finally, all results are concatenated into a single list.
---
-discoverTests
-  :: Bool      -- ^ Whether to search subdirectories recursively
-  -> FilePath  -- ^ Root directory to search
-  -> IO [TestCaseFile] -- ^ Discovered test cases
+discoverTests ::
+  -- | Whether to search subdirectories recursively
+  Bool ->
+  -- | Root directory to search
+  FilePath ->
+  -- | Discovered test cases
+  IO [TestCaseFile]
 discoverTests recursive dir = do
   entries <- listDirectory dir
   let fullPaths = map (dir </>) entries

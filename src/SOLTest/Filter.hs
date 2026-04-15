@@ -77,11 +77,14 @@ matchesAny useRegex criteria test =
 --
 -- * Currently, @useRegex@ is ignored (exact string matching only)
 -- * Matching is case-sensitive
-matchesCriterion
-  :: Bool                 -- ^ Enable regex matching (currently unused)
-  -> TestCaseDefinition   -- ^ Test to evaluate
-  -> FilterCriterion      -- ^ Criterion to match against
-  -> Bool
+matchesCriterion ::
+  -- | Enable regex matching (currently unused)
+  Bool ->
+  -- | Test to evaluate
+  TestCaseDefinition ->
+  -- | Criterion to match against
+  FilterCriterion ->
+  Bool
 matchesCriterion _ test criterion =
   case criterion of
     ByAny raw ->

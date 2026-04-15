@@ -172,14 +172,20 @@ filterSpecParser =
 -- * Regex mode is disabled by default ('fsUseRegex' = 'False').
 -- * Includes and excludes are merged into final lists
 -- * Regex mode is disabled ('fsUseRegex' = 'False'), not doing extra part
-buildFilterSpec
-  :: [String] -- ^ Include by any field
-  -> [String] -- ^ Exclude by any field
-  -> [String] -- ^ Include by category
-  -> [String] -- ^ Include by tag
-  -> [String] -- ^ Exclude by category
-  -> [String] -- ^ Exclude by tag
-  -> FilterSpec
+buildFilterSpec ::
+  -- | Include by any field
+  [String] ->
+  -- | Exclude by any field
+  [String] ->
+  -- | Include by category
+  [String] ->
+  -- | Include by tag
+  [String] ->
+  -- | Exclude by category
+  [String] ->
+  -- | Exclude by tag
+  [String] ->
+  FilterSpec
 buildFilterSpec includeSome excludeSome includeCategory includeTag excludeCategory excludeTag =
   let includesSome = map (\s -> ByAny (trim s)) includeSome
       includesCategory = map (\s -> ByCategory (trim s)) includeCategory
